@@ -1,4 +1,4 @@
-﻿import streamlit as st
+import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
 import pandas as pd
@@ -35,6 +35,7 @@ dislch4ef = 3.9 #kgCH4/TJ
 disln2oef = 3.9 #kgN2O/TJ
 efelectricity = 0.78 #kgCO2/kwh
 efwaste = 0.5 #KgCO2e/kg
+efwater = 10.6 #KgCO2/m3
 
 gwpch4 = 25 #CH4 CO2equivalence
 n2ogwp = 298 #N2O CO2equivalence
@@ -58,8 +59,10 @@ if file1 is not None:
     waste = df1['Waste'] #Waste generation in kg
     wasteco2 = waste*efwaste 
 
-    scope2 = elecco2+wasteco2
+    water = df1['Water'] #Water usage in m3
+    waterco2 = water*efwater
 
+    scope2 = elecco2+wasteco2
     sumscope2 = sum(scope2)
 
 
@@ -68,11 +71,14 @@ if file1 is not None:
     carch4 = car*fuelconv*gasch4ef
     carn2o = car*fuelconv*gasn2oef
 
+    carco2e = carco2+carch4+carn2o
+
     truck = df1['Truck'] #Distance travelled by Trucks in km (Assuming trucks use only diesel)
     truckco2 = truck*fuelconv*dislco2ef
     truckch4 = truck*fuelconv*dislch4ef
     truckn2o = truck*fuelconv*disln2oef
 
+    truckco2e = truckco2+truckch4+truckn2o
 
     scope3 = carco2+carch4+carn2o+truckco2+truckch4+truckn2o
     scope3co2e = carco2+carch4*25+carn2o*298+truckco2+truckch4*25+truckn2o*298
@@ -113,15 +119,52 @@ if file1 is not None:
                        yaxis_title="GHG Emission Tons CO2e",
                        xaxis_title="2022")
 
+    fig5 = go.Figure(data=go.Scatter(x=df1['Month'], y=totallpgco2e/1000, name="GHG emission by Scope 1"))
+    fig5.update_layout(title="Total GHG emission by Scope 1",
+                       yaxis_title="Ton CO2e",
+                       xaxis_title="2022"
+                       )
 
+    fig6 = go.Figure(data=go.Scatter(x=df1['Month'], y=scope2/1000, name="GHG emission by Scope 2"))
+    fig6.update_layout(title="Total GHG emission by Scope 2",
+                       yaxis_title="Ton CO2e",
+                       xaxis_title="2022"
+                       )
+
+    fig7 = go.Figure(data=go.Scatter(x=df1['Month'], y=scope3co2e/1000, name="GHG emission by Scope 3"))
+    fig7.update_layout(title="Total GHG emission by Scope 3",
+                       yaxis_title="Ton CO2e",
+                       xaxis_title="2022"
+                       )
+
+    fig8 = go.Figure(data=[go.Pie(labels=["Electricity", "Waste", "Water"], 
+                                  values=[sum(elecco2), sum(wasteco2), sum(waterco2)])])
+    fig8.update_layout(title="Scope 2 GHG emission sources")
+
+    fig9 = go.Figure(data=[go.Pie(labels=["Car", "Truck"], 
+                                  values=[sum(carco2e), sum(truckco2e)])])
+    fig9.update_layout(title="Scope 3 GHG emission sources")
+
+    fig10 = go.Figure(data=[go.Pie(labels=["LPG"], 
+                                  values=[sumscope1co2e])])
+    fig10.update_layout(title="Scope 1 GHG emission sources")
+    
     with tab1:
         st.plotly_chart(fig2)
-
-    with tab1:
         st.plotly_chart(fig3)
-
-    with tab1:
         st.plotly_chart(fig4)
+    
+    with tab2:
+        st.plotly_chart(fig5)
+        st.plotly_chart(fig10)
+        
+    with tab3:
+        st.plotly_chart(fig6)
+        st.plotly_chart(fig8)
+
+    with tab4:
+        st.plotly_chart(fig7)
+        st.plotly_chart(fig9)
 
 
         
